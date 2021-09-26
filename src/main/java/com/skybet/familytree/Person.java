@@ -1,11 +1,14 @@
 package com.skybet.familytree;
 
+import lombok.Builder;
+
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import java.util.List;
 
 @Entity
+@Builder
 public class Person {
     @Id
     private String name;
@@ -31,7 +34,7 @@ public class Person {
         this.name = name;
     }
 
-    public List<String> getParentNames() {
+    public List<String> getParents() {
         return parents;
     }
 
@@ -44,7 +47,7 @@ public class Person {
         this.parents = parents;
     }
 
-    public List<String> getChildrenNames() {
+    public List<String> getChildren() {
         return children;
     }
 

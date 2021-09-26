@@ -48,17 +48,24 @@ public class Controller {
     // Method to add a child to the DB
     @PutMapping("/add")
     public ResponseEntity<String> addPerson(@RequestBody Person reqPerson) {
+        // Prevent duplicate names from being added to the repository
+        if (familyRepository.existsById(reqPerson.getName()))
+            return new ResponseEntity<>("Person already exists", HttpStatus.CONFLICT);
+
         // Add given Person (from the JSON object) to the repository
         familyRepository.save(reqPerson);
 
         // Then insert the new person's name into the children list for both parents
+        // if they have been defined
         Person parent;
-        for (String parentStr : reqPerson.getParentNames()) {
-            // Get the parent out of the repository
-            parent = familyRepository.findByName(parentStr);
-            // Add the child to the parent then save
-            parent.addChild(reqPerson.getName());
-            familyRepository.save(parent);
+        if (reqPerson.getParents() != null) {
+            for (String parentStr : reqPerson.getParents()) {
+                // Get the parent out of the repository
+                parent = familyRepository.findByName(parentStr);
+                // Add the child to the parent then save
+                parent.addChild(reqPerson.getName());
+                familyRepository.save(parent);
+            }
         }
         return new ResponseEntity<>("Added person successfully", HttpStatus.OK);
     }
@@ -71,9 +78,11 @@ public class Controller {
         Person person = familyRepository.findByName(reqPerson.getName());
         if (person != null) {
             // Person exists, so get both parents out of the repository
-            for (String parent : person.getParentNames()) {
+            for (String parent : person.getParents()) {
                 parents.add(familyRepository.findByName(parent));
             }
+        } else {
+            return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok(parents);
     }
@@ -86,9 +95,11 @@ public class Controller {
         Person person = familyRepository.findByName(reqPerson.getName());
         if (person != null) {
             // Person exists, so get any out of the repository
-            for (String child : person.getChildrenNames()) {
+            for (String child : person.getChildren()) {
                 children.add(familyRepository.findByName(child));
             }
+        } else {
+            return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok(children);
     }
@@ -104,18 +115,20 @@ public class Controller {
 
         if (person != null) {    // Person exists, so recursively get the descendants
             iterateThroughDescendants(person);
+        } else {
+            return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok(descendants);
     }
 
     private void iterateThroughDescendants(Person person) {
         // For every person, get their children's names
-        for (String childStr : person.getChildrenNames()) {
+        for (String childStr : person.getChildren()) {
             Person child = familyRepository.findByName(childStr);
             if (child != null) {
                 // Child exists, so add it to the array of descendants
                 descendants.add(child);
-                if (child.getChildrenNames().isEmpty()) {
+                if (child.getChildren().isEmpty()) {
                     //  person has no children so stop
                 } else {   // Repeat for the current child
                     iterateThroughDescendants(child);
@@ -124,7 +137,7 @@ public class Controller {
         }
     }
 
-    // TODO: Method to list all ancestors for a given person
+    // Method to list all ancestors for a given person
     @GetMapping("/ancestors")
     public ResponseEntity<?> listAncestors(@RequestBody Person reqPerson) {
         // New request, so clear the array of ancestors
@@ -135,18 +148,20 @@ public class Controller {
 
         if (person != null) {    // Person exists, so recursively get the ancestors
             iterateThroughAncestors(person);
+        } else {
+            return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok(ancestors);
     }
 
     private void iterateThroughAncestors(Person person) {
-        // For every person, get their parents's names
-        for (String parentStr : person.getParentNames()) {
+        // For every person, get their parent's names
+        for (String parentStr : person.getParents()) {
             Person parent = familyRepository.findByName(parentStr);
             if (parent != null) {
                 // Parent exists, so add it to the array of descendants
                 ancestors.add(parent);
-                if (parent.getParentNames().isEmpty()) {
+                if (parent.getParents().isEmpty()) {
                     //  person has no children so stop
                 } else {   // Repeat for the current child
                     iterateThroughAncestors(parent);
