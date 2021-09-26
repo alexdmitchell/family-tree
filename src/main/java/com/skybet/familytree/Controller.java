@@ -15,6 +15,8 @@ import java.util.Arrays;
 
 @RestController
 public class Controller {
+    ArrayList<Person> descendants = new ArrayList<>();
+    ArrayList<Person> ancestors = new ArrayList<>();
 
     @Autowired
     FamilyRepository familyRepository;
@@ -22,9 +24,10 @@ public class Controller {
     // Method to initialise the Hibernate DB with 2 initial parents
     @PostConstruct
     private void initialiseDB() {
-        //familyRepository.save(new Person("Alice", null, null));
-        //familyRepository.save(new Person("Bob", null, null));
+        familyRepository.save(new Person("Alice", null, null));
+        familyRepository.save(new Person("Bob", null, null));
 
+        /*
         // Test data
         familyRepository.save(new Person("Alice", null, Arrays.asList("Charles", "Dave")));
         familyRepository.save(new Person("Bob", null, Arrays.asList("Charles", "Dave")));
@@ -33,7 +36,7 @@ public class Controller {
         familyRepository.save(new Person("George", Arrays.asList("Emily", "Charles"), null));
         familyRepository.save(new Person("Dave", Arrays.asList("Alice", "Bob"), Arrays.asList("Harry")));
         familyRepository.save(new Person("Francis", null, Arrays.asList("Harry")));
-        familyRepository.save(new Person("Harry", Arrays.asList("Francis", "Dave"), null));
+        familyRepository.save(new Person("Harry", Arrays.asList("Francis", "Dave"), null));*/
     }
 
     // Method for initial testing to print all entries in the DB
@@ -90,16 +93,66 @@ public class Controller {
         return ResponseEntity.ok(children);
     }
 
-    // TODO: Method to list all descendants for a given person
+    // Method to list all descendants for a given person
     @GetMapping("/descendants")
     public ResponseEntity<?> listDescendants(@RequestBody Person reqPerson) {
-        return new ResponseEntity<>("", HttpStatus.OK);
+        // New request, so clear the array of descendants
+        descendants.clear();
+
+        // Get the requested person out of the repository
+        Person person = familyRepository.findByName(reqPerson.getName());
+
+        if (person != null) {    // Person exists, so recursively get the descendants
+            iterateThroughDescendants(person);
+        }
+        return ResponseEntity.ok(descendants);
+    }
+
+    private void iterateThroughDescendants(Person person) {
+        // For every person, get their children's names
+        for (String childStr : person.getChildrenNames()) {
+            Person child = familyRepository.findByName(childStr);
+            if (child != null) {
+                // Child exists, so add it to the array of descendants
+                descendants.add(child);
+                if (child.getChildrenNames().isEmpty()) {
+                    //  person has no children so stop
+                } else {   // Repeat for the current child
+                    iterateThroughDescendants(child);
+                }
+            }
+        }
     }
 
     // TODO: Method to list all ancestors for a given person
     @GetMapping("/ancestors")
     public ResponseEntity<?> listAncestors(@RequestBody Person reqPerson) {
-        return new ResponseEntity<>("", HttpStatus.OK);
+        // New request, so clear the array of ancestors
+        ancestors.clear();
+
+        // Get the requested person out of the repository
+        Person person = familyRepository.findByName(reqPerson.getName());
+
+        if (person != null) {    // Person exists, so recursively get the ancestors
+            iterateThroughAncestors(person);
+        }
+        return ResponseEntity.ok(ancestors);
+    }
+
+    private void iterateThroughAncestors(Person person) {
+        // For every person, get their parents's names
+        for (String parentStr : person.getParentNames()) {
+            Person parent = familyRepository.findByName(parentStr);
+            if (parent != null) {
+                // Parent exists, so add it to the array of descendants
+                ancestors.add(parent);
+                if (parent.getParentNames().isEmpty()) {
+                    //  person has no children so stop
+                } else {   // Repeat for the current child
+                    iterateThroughAncestors(parent);
+                }
+            }
+        }
     }
 
 }
