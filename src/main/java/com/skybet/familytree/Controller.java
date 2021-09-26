@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 @RestController
 public class Controller {
@@ -20,49 +22,83 @@ public class Controller {
     // Method to initialise the Hibernate DB with 2 initial parents
     @PostConstruct
     private void initialiseDB() {
-        familyRepository.save(new Person("Alice", null, null));
-        familyRepository.save(new Person("Bob", null, null));
+        //familyRepository.save(new Person("Alice", null, null));
+        //familyRepository.save(new Person("Bob", null, null));
+
+        // Test data
+        familyRepository.save(new Person("Alice", null, Arrays.asList("Charles", "Dave")));
+        familyRepository.save(new Person("Bob", null, Arrays.asList("Charles", "Dave")));
+        familyRepository.save(new Person("Charles", Arrays.asList("Alice", "Bob"), Arrays.asList("George")));
+        familyRepository.save(new Person("Emily", null, Arrays.asList("George")));
+        familyRepository.save(new Person("George", Arrays.asList("Emily", "Charles"), null));
+        familyRepository.save(new Person("Dave", Arrays.asList("Alice", "Bob"), Arrays.asList("Harry")));
+        familyRepository.save(new Person("Francis", null, Arrays.asList("Harry")));
+        familyRepository.save(new Person("Harry", Arrays.asList("Francis", "Dave"), null));
     }
 
-    // TODO: Method for initial testing to print all entries in the DB
+    // Method for initial testing to print all entries in the DB
     @GetMapping
-    public ResponseEntity<?> listTree()
-    {
+    public ResponseEntity<?> listTree() {
         return ResponseEntity.ok(Lists.newArrayList(familyRepository.findAll(), HttpStatus.OK));
     }
 
-    // TODO: Method to add a child to the DB
+    // Method to add a child to the DB
     @PutMapping("/add")
-    public ResponseEntity<String> addPerson(@RequestBody Person reqPerson)
-    {
-        return new ResponseEntity<>("", HttpStatus.OK);
+    public ResponseEntity<String> addPerson(@RequestBody Person reqPerson) {
+        // Add given Person (from the JSON object) to the repository
+        familyRepository.save(reqPerson);
+
+        // Then insert the new person's name into the children list for both parents
+        Person parent;
+        for (String parentStr : reqPerson.getParentNames()) {
+            // Get the parent out of the repository
+            parent = familyRepository.findByName(parentStr);
+            // Add the child to the parent then save
+            parent.addChild(reqPerson.getName());
+            familyRepository.save(parent);
+        }
+        return new ResponseEntity<>("Added person successfully", HttpStatus.OK);
     }
 
-    // TODO: Method to list both parents for a given person
+    // Method to list both parents for a given person
     @GetMapping("/parents")
-    public ResponseEntity<?> listParents(@RequestBody Person reqPerson)
-    {
-        return new ResponseEntity<>("", HttpStatus.OK);
+    public ResponseEntity<?> listParents(@RequestBody Person reqPerson) {
+        ArrayList<Person> parents = new ArrayList<>(); // Used to store parent person objects
+        // Get the requested person out of the repository
+        Person person = familyRepository.findByName(reqPerson.getName());
+        if (person != null) {
+            // Person exists, so get both parents out of the repository
+            for (String parent : person.getParentNames()) {
+                parents.add(familyRepository.findByName(parent));
+            }
+        }
+        return ResponseEntity.ok(parents);
     }
 
-    // TODO: Method to list children for a given person
+    // Method to list children for a given person
     @GetMapping("/children")
-    public ResponseEntity<?> listChildren(@RequestBody Person reqPerson)
-    {
-        return new ResponseEntity<>("", HttpStatus.OK);
+    public ResponseEntity<?> listChildren(@RequestBody Person reqPerson) {
+        ArrayList<Person> children = new ArrayList<>(); // Used to store child person objects
+        // Get the requested person out of the repository
+        Person person = familyRepository.findByName(reqPerson.getName());
+        if (person != null) {
+            // Person exists, so get any out of the repository
+            for (String child : person.getChildrenNames()) {
+                children.add(familyRepository.findByName(child));
+            }
+        }
+        return ResponseEntity.ok(children);
     }
 
     // TODO: Method to list all descendants for a given person
     @GetMapping("/descendants")
-    public ResponseEntity<?> listDescendants(@RequestBody Person reqPerson)
-    {
+    public ResponseEntity<?> listDescendants(@RequestBody Person reqPerson) {
         return new ResponseEntity<>("", HttpStatus.OK);
     }
 
     // TODO: Method to list all ancestors for a given person
     @GetMapping("/ancestors")
-    public ResponseEntity<?> listAncestors(@RequestBody Person reqPerson)
-    {
+    public ResponseEntity<?> listAncestors(@RequestBody Person reqPerson) {
         return new ResponseEntity<>("", HttpStatus.OK);
     }
 

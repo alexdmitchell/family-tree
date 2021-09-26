@@ -31,15 +31,20 @@ public class Person {
         this.name = name;
     }
 
-    public List<String> getParents() {
+    public List<String> getParentNames() {
         return parents;
+    }
+
+    public void addChild(String childName)
+    {
+        children.add(childName);
     }
 
     public void setParents(List<String> parents) {
         this.parents = parents;
     }
 
-    public List<String> getChildren() {
+    public List<String> getChildrenNames() {
         return children;
     }
 
