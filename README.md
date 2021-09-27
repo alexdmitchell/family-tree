@@ -26,6 +26,8 @@ Each person record is keyed on their name in the database, therefore every perso
 For testing, I implemented 3 automated tests to test adding a new child to the tree, check that adding a duplicate 
 person is rejected and to add a new child and list the parents for that child within the given timeframe.
 
+To run the automated tests from the command line, run mvn -Dtest=FamilyTreeApplicationTests test
+
 ##Interacting with the application
 
 The family tree can be manipulated by sending JSON, using an application such as Postman. The available endpoints 

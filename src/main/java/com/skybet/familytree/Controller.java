@@ -1,6 +1,8 @@
 package com.skybet.familytree;
 
 import org.assertj.core.util.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,7 @@ import java.util.Arrays;
 public class Controller {
     ArrayList<Person> descendants = new ArrayList<>();
     ArrayList<Person> ancestors = new ArrayList<>();
+    Logger logger = LoggerFactory.getLogger(Controller.class);
 
     @Autowired
     FamilyRepository familyRepository;
@@ -39,18 +42,22 @@ public class Controller {
         familyRepository.save(new Person("Harry", Arrays.asList("Francis", "Dave"), null));*/
     }
 
+    /*
     // Method for initial testing to print all entries in the DB
     @GetMapping
     public ResponseEntity<?> listTree() {
         return ResponseEntity.ok(Lists.newArrayList(familyRepository.findAll(), HttpStatus.OK));
     }
+     */
 
     // Method to add a child to the DB
     @PutMapping("/add")
     public ResponseEntity<String> addPerson(@RequestBody Person reqPerson) {
         // Prevent duplicate names from being added to the repository
-        if (familyRepository.existsById(reqPerson.getName()))
+        if (familyRepository.existsById(reqPerson.getName())) {
+            logger.warn("Attempted to add " + reqPerson.getName() + " who already exists in the repository");
             return new ResponseEntity<>("Person already exists", HttpStatus.CONFLICT);
+        }
 
         // Add given Person (from the JSON object) to the repository
         familyRepository.save(reqPerson);
@@ -69,11 +76,13 @@ public class Controller {
                         familyRepository.save(parent);
                     }
                 } catch (RepositoryException e) {
+                    logger.error("Database exception occurred while adding " + reqPerson.getName() + ": " + e);
                     return new ResponseEntity<>("Database exception occurred", HttpStatus.INTERNAL_SERVER_ERROR);
                 }
 
             }
         }
+        logger.info("Added " + reqPerson.getName() + " successfully");
         return new ResponseEntity<>("Added person successfully", HttpStatus.OK);
     }
 
@@ -90,10 +99,12 @@ public class Controller {
                     parents.add(familyRepository.findByName(parent));
                 }
             } else {
+                logger.warn("Failed to find " + reqPerson.getName() + " in the tree");
                 return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
             }
             return ResponseEntity.ok(parents);
         } catch (RepositoryException e) {
+            logger.error("Database exception occurred while adding " + reqPerson.getName() + ": " + e);
             return new ResponseEntity<>("Database exception occurred", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -111,10 +122,12 @@ public class Controller {
                     children.add(familyRepository.findByName(child));
                 }
             } else {
+                logger.warn("Failed to find " + reqPerson.getName() + " in the tree");
                 return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
             }
             return ResponseEntity.ok(children);
         } catch (RepositoryException e) {
+            logger.error("Database exception occurred while adding " + reqPerson.getName() + ": " + e);
             return new ResponseEntity<>("Database exception occurred", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -132,10 +145,12 @@ public class Controller {
             if (person != null) {    // Person exists, so recursively get the descendants
                 iterateThroughDescendants(person);
             } else {
+                logger.warn("Failed to find " + reqPerson.getName() + " in the tree");
                 return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
             }
             return ResponseEntity.ok(descendants);
         } catch (RepositoryException e) {
+            logger.error("Database exception occurred while adding " + reqPerson.getName() + ": " + e);
             return new ResponseEntity<>("Database exception occurred", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -169,10 +184,12 @@ public class Controller {
             if (person != null) {    // Person exists, so recursively get the ancestors
                 iterateThroughAncestors(person);
             } else {
+                logger.warn("Failed to find " + reqPerson.getName() + " in the tree");
                 return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
             }
             return ResponseEntity.ok(ancestors);
         } catch (RepositoryException e) {
+            logger.error("Database exception occurred while adding " + reqPerson.getName() + ": " + e);
             return new ResponseEntity<>("Database exception occurred", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
