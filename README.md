@@ -1,8 +1,8 @@
-#Family Tree Tech Test Project
+# Family Tree Tech Test Project
 
 Java project to model a basic family tree structure manipulated using a REST API
 
-##Technology Choices Made
+## Technology Choices Made
 
 I have selected Java out of the recommended languages, as it is the most suitable language that I am comfortable with.
 
@@ -10,12 +10,12 @@ The project uses the Spring Boot framework with Spring Web, Spring Data JPA and 
 to enable fast development of a RESTful application with support for an in-memory database to store the Family tree data.
 Additionally, it was initially created using the Spring Initializr to quickly generate the project structure.
 
-##Limitations
+## Limitations
 
 Each person record is keyed on their name in the database, therefore every person must have a unique name in the tree
 (duplicate names are rejected when adding a new person).
 
-##Running the project in a Mac environment
+## Running the project in a Mac environment
 
 1. Clone the project to a local directory (git clone https://github.com/alexdmitchell/family-tree.git)
 2. cd to family-tree, then run mvn clean install to build the project
@@ -24,11 +24,11 @@ Each person record is keyed on their name in the database, therefore every perso
 
 ## Automated testing
 For testing, I implemented 3 automated tests to test adding a new child to the tree, check that adding a duplicate 
-person is rejected and to add a new child and list the parents for that child within the given timeframe.
+person is rejected and to add a new child and list the parents for that child, within the given timeframe.
 
 To run the automated tests from the command line, run mvn -Dtest=FamilyTreeApplicationTests test
 
-##Interacting with the application
+## Interacting with the application
 
 The family tree can be manipulated by sending JSON, using an application such as Postman. The available endpoints 
 provided by the REST API are
