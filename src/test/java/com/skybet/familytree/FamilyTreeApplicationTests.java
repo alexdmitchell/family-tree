@@ -103,4 +103,6 @@ class FamilyTreeApplicationTests {
                     }
                 });
     }
+
+    // TODO: Add automated tests for listing children, descendants and ancestors
 }

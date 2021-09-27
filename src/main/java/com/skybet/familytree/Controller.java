@@ -60,11 +60,18 @@ public class Controller {
         Person parent;
         if (reqPerson.getParents() != null) {
             for (String parentStr : reqPerson.getParents()) {
-                // Get the parent out of the repository
-                parent = familyRepository.findByName(parentStr);
-                // Add the child to the parent then save
-                parent.addChild(reqPerson.getName());
-                familyRepository.save(parent);
+                try {
+                    // Get the parent out of the repository
+                    parent = familyRepository.findByName(parentStr);
+                    if (parent != null) {
+                        // Add the child to the parent then save
+                        parent.addChild(reqPerson.getName());
+                        familyRepository.save(parent);
+                    }
+                } catch (RepositoryException e) {
+                    return new ResponseEntity<>("Database exception occurred", HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+
             }
         }
         return new ResponseEntity<>("Added person successfully", HttpStatus.OK);
@@ -75,16 +82,20 @@ public class Controller {
     public ResponseEntity<?> listParents(@RequestBody Person reqPerson) {
         ArrayList<Person> parents = new ArrayList<>(); // Used to store parent person objects
         // Get the requested person out of the repository
-        Person person = familyRepository.findByName(reqPerson.getName());
-        if (person != null) {
-            // Person exists, so get both parents out of the repository
-            for (String parent : person.getParents()) {
-                parents.add(familyRepository.findByName(parent));
+        try {
+            Person person = familyRepository.findByName(reqPerson.getName());
+            if (person != null) {
+                // Person exists, so get both parents out of the repository
+                for (String parent : person.getParents()) {
+                    parents.add(familyRepository.findByName(parent));
+                }
+            } else {
+                return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
             }
-        } else {
-            return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
+            return ResponseEntity.ok(parents);
+        } catch (RepositoryException e) {
+            return new ResponseEntity<>("Database exception occurred", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return ResponseEntity.ok(parents);
     }
 
     // Method to list children for a given person
@@ -92,16 +103,20 @@ public class Controller {
     public ResponseEntity<?> listChildren(@RequestBody Person reqPerson) {
         ArrayList<Person> children = new ArrayList<>(); // Used to store child person objects
         // Get the requested person out of the repository
-        Person person = familyRepository.findByName(reqPerson.getName());
-        if (person != null) {
-            // Person exists, so get any out of the repository
-            for (String child : person.getChildren()) {
-                children.add(familyRepository.findByName(child));
+        try {
+            Person person = familyRepository.findByName(reqPerson.getName());
+            if (person != null) {
+                // Person exists, so get any out of the repository
+                for (String child : person.getChildren()) {
+                    children.add(familyRepository.findByName(child));
+                }
+            } else {
+                return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
             }
-        } else {
-            return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
+            return ResponseEntity.ok(children);
+        } catch (RepositoryException e) {
+            return new ResponseEntity<>("Database exception occurred", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return ResponseEntity.ok(children);
     }
 
     // Method to list all descendants for a given person
@@ -110,15 +125,19 @@ public class Controller {
         // New request, so clear the array of descendants
         descendants.clear();
 
-        // Get the requested person out of the repository
-        Person person = familyRepository.findByName(reqPerson.getName());
+        try {
+            // Get the requested person out of the repository
+            Person person = familyRepository.findByName(reqPerson.getName());
 
-        if (person != null) {    // Person exists, so recursively get the descendants
-            iterateThroughDescendants(person);
-        } else {
-            return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
+            if (person != null) {    // Person exists, so recursively get the descendants
+                iterateThroughDescendants(person);
+            } else {
+                return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
+            }
+            return ResponseEntity.ok(descendants);
+        } catch (RepositoryException e) {
+            return new ResponseEntity<>("Database exception occurred", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return ResponseEntity.ok(descendants);
     }
 
     private void iterateThroughDescendants(Person person) {
@@ -143,15 +162,19 @@ public class Controller {
         // New request, so clear the array of ancestors
         ancestors.clear();
 
-        // Get the requested person out of the repository
-        Person person = familyRepository.findByName(reqPerson.getName());
+        try {
+            // Get the requested person out of the repository
+            Person person = familyRepository.findByName(reqPerson.getName());
 
-        if (person != null) {    // Person exists, so recursively get the ancestors
-            iterateThroughAncestors(person);
-        } else {
-            return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
+            if (person != null) {    // Person exists, so recursively get the ancestors
+                iterateThroughAncestors(person);
+            } else {
+                return new ResponseEntity<>("Could not find person in the tree", HttpStatus.NOT_FOUND);
+            }
+            return ResponseEntity.ok(ancestors);
+        } catch (RepositoryException e) {
+            return new ResponseEntity<>("Database exception occurred", HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return ResponseEntity.ok(ancestors);
     }
 
     private void iterateThroughAncestors(Person person) {
@@ -169,5 +192,4 @@ public class Controller {
             }
         }
     }
-
 }
